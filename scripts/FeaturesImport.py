@@ -2,7 +2,7 @@
 import os
 import pandas as pd
 import numpy as np
-
+import matplotlib.mlab as mlab
 
 
 def import_labels():
@@ -37,6 +37,18 @@ class FeaturesImport_v0():
                            "latin", "metal", "pop", "rnb", "rock")
         # Set training and testing ratio
         self.TRAINING_RATIO = 0.75
+        # USE PCA for dimensionality reduction
+        self.USE_PCA = False
+
+    # Principal Component Analysis to reduce dimensionality of feature space
+    def pca(self, feature, var_lim):
+        i = 0
+        max_var = 0
+        results = mlab.PCA(feature)
+        while max_var <= var_lim:
+            max_var += results.fracs[i]
+            i += 1
+        return results.Y[:, 0:5]
 
     # Select a smaller part of the dataset's ids and split between training and testing
     def select_subset_and_split(self, ratio):
@@ -51,7 +63,10 @@ class FeaturesImport_v0():
         track_features = {}
         labels = labels_df.loc[labels_df['category'] == category]
         for _, label in labels.iterrows():
-            track_features.setdefault('features', []).append(np.array(import_track('datasets/training/', select_ids(label))))
+            features = np.array(import_track('datasets/training/', select_ids(label)))
+            if self.USE_PCA:
+                features = self.pca(features, 0.80)
+            track_features.setdefault('features', []).append(features)
             track_features.setdefault('id', []).append(label['id'])
             track_features.setdefault('category', []).append(label['category'])
         return track_features
