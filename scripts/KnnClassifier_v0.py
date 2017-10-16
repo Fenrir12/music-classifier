@@ -12,13 +12,13 @@ import xarray as xr
 
 
 class KnnClassifier_v0:
+    '''Set of tools to classify 12-dimensions features pack using k-nearest neighbors'''
     def __init__(self):
         # Initialize tuples for categories' names
         self.categories = ("classical", "country", "edm_dance", "jazz", "kids",
                            "latin", "metal", "pop", "rnb", "rock")
         self.feature_set = {}
 
-    # Get k-nearest euclidean distance genre of a song with training dataset
     def genre_from_euclidean(self, track_features, k):
         '''Compute distance matrix of queried song with dataset features
         and extract closest neighbors'''
@@ -41,12 +41,10 @@ class KnnClassifier_v0:
 
         return genre_df.values[0]
 
-    # Create dataframe with classification results
     def create_results_df(self, predictions):
         '''Creates dataframe with prediction results'''
         return pd.DataFrame(predictions, columns=['id', 'category'])
 
-    # Make predictions of genre based on input test set
     def class_test_set(self, test_set):
         '''Classes value of test set and offers feedback on accuracy'''
         predictions = []
@@ -78,14 +76,23 @@ class KnnClassifier_v0:
             predictions.append([id_f, prediction])
 
         return predictions
+
+
 if __name__ == "__main__":
-    val = sys.argv[1]
-    USE_VALIDATION_SET = val
-    TRAIN_TEST_RATIO = 0.5
+    # Routine to extract either the accuracy of the classifier on test set or predictions of unknown songs by id
+    if sys.argv[1] == 'use_test':
+        USE_VALIDATION_SET = False
+    elif sys.argv[1] == 'use_val':
+        USE_VALIDATION_SET = True
+    else:
+        print 'Wrong selection, select use_test or use_val'
+        sys.exit()
+    TRAIN_TEST_RATIO = 1.0
     # Initialize mean vector and covariance dictionnaries
     mean_vector = {}
     covariance_matrix = {}
     # Create class to import features
+    print 'IMPORTING FEATURES...'
     features = FeaturesImport_v0()
     # Create predictions accuracy list
     results = []
@@ -111,11 +118,13 @@ if __name__ == "__main__":
         knn.feature_set[key] = np.concatenate(training_set[key]['features'])
 
     if USE_VALIDATION_SET:
+        print 'Classifying validation set...'
         predictions = knn.class_val_set(validation_set)
         # Transfer results to csv file
         result_df = knn.create_results_df(predictions)
         result_df.to_csv(features.get_path('test_labels.csv'), ',', index=False)
     else:
+        print 'Classifying test set...'
         predictions, results = knn.class_test_set(test_set)
         # Output accuracy of classification
         accuracy = float(sum(results) / len(results))

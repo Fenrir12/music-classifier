@@ -53,9 +53,10 @@ class FeaturesImport_v0():
     # Select a smaller part of the dataset's ids and split between training and testing
     def select_subset_and_split(self, ratio):
         size = self.id_labels_df.values.shape[0]
-        subset_labels_df = self.id_labels_df.sample(round(size * ratio))
+        no_sam = int(round(size * ratio))
+        subset_labels_df = self.id_labels_df.sample(no_sam)
         training_ratio = ratio * self.TRAINING_RATIO
-        training_labels_df = subset_labels_df.sample(round(size * training_ratio))
+        training_labels_df = subset_labels_df.sample(int(round(size * training_ratio)))
         test_labels_df = subset_labels_df.loc[~subset_labels_df['id'].isin(training_labels_df['id'])]
         return training_labels_df, test_labels_df
 

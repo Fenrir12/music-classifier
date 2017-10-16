@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 
 class GaussianClassifier_v0:
+    '''Class to apply gaussian naive bayes on song features with 12 dimensions'''
     def __init__(self):
         # Initialize tuples for categories' names
         self.categories = ("classical", "country", "edm_dance", "jazz", "kids",
@@ -16,35 +17,35 @@ class GaussianClassifier_v0:
         self.covariance_matrices = {}
 
     def get_mean_vector(self, category, set):
+        '''Get mean vectors for each category'''
         mean_vector = []
         for track in set[category]['features']:
             mean_vector.append(np.mean(track, axis=0))
         return np.array(np.mean(mean_vector, axis=0))
 
-    # Extract and concatenates all tracks along 12 variables
     def get_category_scatter(self, category, set):
+        '''Extract and concatenates all tracks along 12 variables'''
         return np.concatenate(tuple(set[category]['features']))
 
-    # Extract covariance matrix for each category of complete feature scatter of the genre
     def get_covariance_matrix(self, category, set):
+        '''Extract covariance matrix for each category of complete feature scatter of the genre'''
         scatter = self.get_category_scatter(category, set)
         return np.matrix(np.cov(scatter.T))
 
-    # Fills mean vector and covariance matrices for each genre of the classifier
     def train_gaussian(self, training_set):
+        '''Fills mean vector and covariance matrices for each genre of the classifier'''
         # Get mean vector and covariance matrix of data
         for category in gauss.categories:
             self.mean_vector[category] = gauss.get_mean_vector(category, training_set)
             self.covariance_matrices[category] = gauss.get_covariance_matrix(category, training_set)
 
-    # Generator to get values of unll for feature
     def unll_gen(self, track, inv_cov, mean_vector):
+        '''Generator to get values of unll for feature'''
         for feature in track:
             yield np.array(np.dot(np.dot(feature - mean_vector, inv_cov), (feature - mean_vector).T))
 
-    # Returns dictionnary key of lowest mean unll value across all genres
     def eval_unll_of_track(self, track):
-        # Dictionnary for unll values between feature and each genre
+        '''Returns dictionnary key of lowest mean unll value across all genres'''
         unll = {}
         unll_mean = {}
         for category in gauss.categories:
@@ -57,8 +58,8 @@ class GaussianClassifier_v0:
             unll_mean[category] = np.mean(unll[category])
         return min(unll_mean, key=unll_mean.get)
 
-    # Make predictions of genre based on input test set
     def class_test_set(self, test_set):
+        '''Classes songs with known labels to verify accuracy'''
         predictions = []
         results = []
         for key in test_set:
@@ -74,6 +75,7 @@ class GaussianClassifier_v0:
         return predictions, results
 
     def class_validation_set(self, val_set):
+        '''Classes unknown songs of test set'''
         predictions = []
         # Get track's id and its features and pass them through classifier
         for features, id_f in zip(val_set['features'], val_set['id']):
@@ -81,18 +83,25 @@ class GaussianClassifier_v0:
             predictions.append([id_f, prediction])
         return predictions
 
-    # Create dataframe with classification results
     def create_results_df(self, predictions):
+        '''Create dataframe with classification results'''
         return pd.DataFrame(predictions, columns=['id', 'category'])
 
 
 if __name__ == "__main__":
-    USE_VALIDATION_SET = True
-    TRAIN_TEST_RATIO = 0.75
+    if sys.argv[1] == 'use_test':
+        USE_VALIDATION_SET = False
+    elif sys.argv[1] == 'use_val':
+        USE_VALIDATION_SET = True
+    else:
+        print 'Wrong selection, select use_test or use_val'
+        sys.exit()
+    TRAIN_TEST_RATIO = 1.0
     # Initialize mean vector and covariance dictionnaries
     mean_vector = {}
     covariance_matrix = {}
     # Create class to import features
+    print 'IMPORTING FEATURES...'
     features = FeaturesImport_v0()
     # Create predictions accuracy list
     results = []
@@ -103,6 +112,7 @@ if __name__ == "__main__":
     else:
         ratio = TRAIN_TEST_RATIO
         features.TRAINING_RATIO = 0.66
+    print 'TRAINING CLASSIFIER ON DATASET...'
     training_labels, test_labels = features.select_subset_and_split(ratio)
     # Build features dictionary for training set and testing set
     training_set = features.get_feature_dict(training_labels)
@@ -116,8 +126,10 @@ if __name__ == "__main__":
     gauss.train_gaussian(training_set)
     # Get classification results
     if USE_VALIDATION_SET:
+        print 'Classifying validation set...'
         predictions = gauss.class_validation_set(validation_set)
     else:
+        print 'Classifying test set...'
         predictions, results = gauss.class_test_set(test_set)
     ################################################################
 
