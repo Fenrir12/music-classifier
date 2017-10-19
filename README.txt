@@ -2,6 +2,14 @@
 clone music classifier and competition datasets from :
 https://github.com/Fenrir12/music-classifier.git
 
+cd into music-classifier
+
+Download song data from : https://www.kaggle.com/c/music-genre-classification/data
+
+Move the content of song_data.zip in the 'datasets' folder
+
+cd into scripts folder
+
 To run basic gaussian naive bayes :
 python GaussianClassifier_v0.py <use_test or use_val>
 	use_test: Will extract accuracy by taking a test set inside training set
